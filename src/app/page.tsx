@@ -27,6 +27,7 @@ export default function Home() {
     const [searchTerm, setSearchTerm] = useState("");
     const [showScrollTop, setShowScrollTop] = useState(false);
     const [showFavorites, setShowFavorites] = useState(false);
+    const [isFirstRender, setIsFirstRender] = useState(true);
 
     const { favorites, toggleFavorite } = useFavoriteStore();
 
@@ -44,13 +45,22 @@ export default function Home() {
     });
 
     useEffect(() => {
-        router.refresh();
+        if (isFirstRender) {
+            setIsFirstRender(false);
+            const hasLoaded = sessionStorage.getItem('hasLoaded');
+            if (!hasLoaded) {
+                sessionStorage.setItem('hasLoaded', 'true');
+                router.refresh();
+            }
+        }
+
         const handleScroll = () => {
             setShowScrollTop(window.scrollY > 400);
         };
         
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handlePrint = (college: College) => {
