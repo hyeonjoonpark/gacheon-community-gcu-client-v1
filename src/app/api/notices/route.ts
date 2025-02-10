@@ -4,18 +4,8 @@ import puppeteer from 'puppeteer';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-let isScrapingInProgress = false;
-
 export async function GET() {
-    if (isScrapingInProgress) {
-        return NextResponse.json(
-            { success: false, message: '이미 스크래핑이 진행 중입니다.', data: [] },
-            { status: 400 }
-        );
-    }
-    
     let browser = null;
-    isScrapingInProgress = true;
     
     try {
         console.log('브라우저 시작 중...');
@@ -88,10 +78,7 @@ export async function GET() {
             { status: 500 }
         );
     } finally {
-        if (browser) {
-            await browser.close();
-        }
-        isScrapingInProgress = false;
+        await browser?.close();
     }
 }
 
