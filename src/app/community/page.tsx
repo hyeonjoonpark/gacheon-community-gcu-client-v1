@@ -4,12 +4,13 @@ import React, { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCommunityStore } from '@/store/communityStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useQuery } from '@tanstack/react-query';
 
 const CommunityPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  const { currentTab, searchQuery, setCurrentTab, setSearchQuery } = useCommunityStore();
+  const { currentTab, currentPage, searchQuery, setCurrentTab, setCurrentPage, setSearchQuery } = useCommunityStore();
   const { theme } = useThemeStore();
 
   const tabs = [
@@ -20,7 +21,12 @@ const CommunityPage = () => {
 
   const handleTabChange = (tabId: string) => {
     setCurrentTab(tabId);
+    setCurrentPage(1); // 탭 변경시 1페이지로 초기화
     router.push(`/community?tab=${tabId}`, { scroll: false });
+  };
+
+  const handleCreatePost = () => {
+    router.push('/community/new');
   };
 
   // 검색어 변경 핸들러 추가
@@ -28,12 +34,32 @@ const CommunityPage = () => {
     setSearchQuery(e.target.value);
   };
 
+  // 게시글 데이터 fetch 함수
+  const { data, isLoading } = useQuery({
+    queryKey: ['posts', currentTab, currentPage, searchQuery],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/posts?page=${currentPage}&tab=${currentTab}&search=${searchQuery}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch posts');
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
+    placeholderData: (previousData) => previousData  // keepPreviousData 대신 사용
+  });
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo(0, 0);
+  };
+
   return (
-    <div className="pt-20">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="pt-20 min-h-screen bg-white dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">커뮤니티</h1>
-          <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+          <button onClick={handleCreatePost} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
             글쓰기
           </button>
         </div>
@@ -57,85 +83,77 @@ const CommunityPage = () => {
           </nav>
         </div>
 
-        <div className={`mt-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center flex-1 mr-4 h-10">
-              <input
-                type="text"
-                placeholder="검색어를 입력해주세요"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className={`h-full px-4 border rounded-l-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500
-                  ${theme === 'dark' 
-                    ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'
-                  }`}
-              />
-              <button className={`h-full px-4 text-white rounded-r-md flex items-center justify-center
-                ${theme === 'dark'
-                  ? 'bg-blue-500 hover:bg-blue-600'
-                  : 'bg-blue-600 hover:bg-blue-700'
-                }`}>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  strokeWidth={2} 
-                  stroke="currentColor" 
-                  className="w-5 h-5"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" 
-                  />
-                </svg>
-              </button>
-            </div>
+        <div className="mb-8">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="검색어를 입력해주세요"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
           </div>
+        </div>
 
+        <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b dark:border-gray-700">
-                <th className="py-3 text-left">번호</th>
-                <th className="py-3 text-left">제목</th>
-                <th className="py-3 text-left">작성자</th>
-                <th className="py-3 text-left">작성일</th>
-                <th className="py-3 text-left">조회</th>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="py-3 text-left text-gray-500 dark:text-gray-400">번호</th>
+                <th className="py-3 text-left text-gray-500 dark:text-gray-400">제목</th>
+                <th className="py-3 text-left text-gray-500 dark:text-gray-400">작성자</th>
+                <th className="py-3 text-left text-gray-500 dark:text-gray-400">작성일</th>
+                <th className="py-3 text-left text-gray-500 dark:text-gray-400">조회</th>
               </tr>
             </thead>
-            <tbody>
-              {/* 게시글 데이터는 백엔드에서 받아와서 매핑 */}
-              <tr className="border-b dark:border-gray-700">
-                <td className="py-4">1</td>
-                <td className="py-4">안녕하세요 신입생입니다</td>
-                <td className="py-4">홍길동</td>
-                <td className="py-4">2024.03.02</td>
-                <td className="py-4">0</td>
-              </tr>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {data?.posts.map((post: any) => (
+                <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <td className="py-4 text-gray-900 dark:text-gray-100">{post.id}</td>
+                  <td className="py-4 text-gray-900 dark:text-gray-100">{post.title}</td>
+                  <td className="py-4 text-gray-900 dark:text-gray-100">{post.author}</td>
+                  <td className="py-4 text-gray-500 dark:text-gray-400">{new Date(post.createdAt).toLocaleDateString()}</td>
+                  <td className="py-4 text-gray-500 dark:text-gray-400">{post.views}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
+        </div>
 
-          <div className="flex justify-center mt-6 gap-2">
-            <button className={`px-3 py-1 rounded-md transition-colors
-              ${theme === 'dark' 
-                ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        <div className="mt-6 flex justify-center gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+          >
+            이전
+          </button>
+          
+          {Array.from({ length: data?.totalPages || 1 }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={`px-3 py-1 rounded-md transition-colors
+                ${currentPage === page
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
             >
-              &lt;
+              {page}
             </button>
-            <button className="px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700">
-              1
-            </button>
-            <button className={`px-3 py-1 rounded-md transition-colors
-              ${theme === 'dark' 
-                ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`
-              }
-            >
-              &gt;
-            </button>
-          </div>
+          ))}
+          
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === (data?.totalPages || 1)}
+            className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+          >
+            다음
+          </button>
         </div>
       </div>
     </div>

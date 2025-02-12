@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useChatStore } from '@/store/chatStore'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence, useDragControls } from 'framer-motion'
 
 // ProfileCard도 dynamic import로 변경
 const ProfileCard = dynamic(() => import('@/components/ProfileCard'), {
@@ -45,6 +46,8 @@ export default function CCPage() {
   const [hasMore, setHasMore] = useState(true)
   const loader = useRef(null)
   const [showChatList, setShowChatList] = useState(false)
+  const dragControls = useDragControls()
+  const [isDragging, setIsDragging] = useState(false)
 
   const profiles = filteredProfiles()
   const displayedProfiles = profiles.slice(0, page * ITEMS_PER_PAGE)
@@ -131,12 +134,25 @@ export default function CCPage() {
             글쓰기
           </button>
         </div>
-        {/* 채팅 목록 토글 버튼 */}
+        {/* 버튼 (드래그 대신 클릭으로 변경) */}
         <button
           onClick={() => setShowChatList(!showChatList)}
-          className="fixed top-4 right-4 z-50 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-blue-500 text-white p-2 rounded-l-md hover:bg-blue-600 transition-colors"
         >
-          채팅 목록 {showChatList ? '닫기' : '열기'}
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="h-6 w-6" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d={showChatList ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"} 
+            />
+          </svg>
         </button>
 
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -235,31 +251,39 @@ export default function CCPage() {
         </div>
 
         {/* 채팅 목록 사이드바 */}
-        {showChatList && (
-          <div className="fixed right-0 top-0 h-full w-80 bg-white dark:bg-gray-800 shadow-lg p-4 overflow-y-auto z-40">
-            <h2 className="text-xl font-semibold mb-4 mt-12">채팅 목록</h2>
-            <div className="space-y-2">
-              {chatPartners.map((partner) => (
-                <div
-                  key={partner.id}
-                  onClick={() => handlePartnerClick(partner)}
-                  className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
-                >
-                  <div className="font-medium">{partner.department}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">
-                    {partner.year} | {partner.gender}
-                  </div>
-                  {partner.lastMessage && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex justify-between">
-                      <span>{partner.lastMessage}</span>
-                      <span>{partner.lastMessageTime}</span>
+        <AnimatePresence>
+          {showChatList && (
+            <motion.div
+              initial={{ x: 320 }}
+              animate={{ x: 0 }}
+              exit={{ x: 320 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed right-0 top-0 h-full w-80 bg-white dark:bg-gray-800 shadow-lg p-4 overflow-y-auto z-40"
+            >
+              <h2 className="text-xl font-semibold mb-4 mt-20">채팅 목록</h2>
+              <div className="space-y-2">
+                {chatPartners.map((partner) => (
+                  <div
+                    key={partner.id}
+                    onClick={() => handlePartnerClick(partner)}
+                    className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                  >
+                    <div className="font-medium">{partner.department}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                      {partner.year} | {partner.gender}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                    {partner.lastMessage && (
+                      <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex justify-between">
+                        <span>{partner.lastMessage}</span>
+                        <span>{partner.lastMessageTime}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

@@ -1,11 +1,3 @@
-type SignUpResponse {
-  id: ID!
-  email: String!
-  username: String!
-  department: String!
-  enteredYear: String!
-}
-
 input SignUpRequest {
   department: String!
   enteredYear: String!

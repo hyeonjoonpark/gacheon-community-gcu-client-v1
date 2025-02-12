@@ -39,9 +39,16 @@ const client = new ApolloClient({
   }
 });
 
-const queryClient = new QueryClient();
+export default function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        retry: 1
+      }
+    }
+  }));
 
-export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ApolloProvider client={client}>
