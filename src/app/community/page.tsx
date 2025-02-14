@@ -63,7 +63,7 @@ const CommunityPage = () => {
     <div className="pt-20 min-h-screen bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">커뮤니티</h1>
+          <h1 className="text-3xl font-bold">게시판</h1>
           <button onClick={handleCreatePost} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
             글쓰기
           </button>
