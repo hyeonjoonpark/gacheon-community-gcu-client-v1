@@ -1,5 +1,97 @@
+scalar DateTime
+scalar Date
+
+enum Role {
+  ROLE_USER
+  ROLE_ADMIN
+}
+
+enum CommunityType {
+  FREE
+  DEPARTMENT
+  STUDENT
+}
+
+type User {
+  id: ID!
+  username: String!
+  email: String!
+  department: String!
+  password: String!
+  enteredYear: Date!
+  role: Role
+}
+
+type Community {
+  id: ID!
+  title: String!
+  content: String!
+  type: CommunityType!
+  tags: [String]
+  likeCount: Int
+  createdAt: DateTime
+  createdBy: String
+  modifiedAt: DateTime
+  modifiedBy: String
+}
+
+type Bamboo {
+  id: ID!
+  title: String!
+  content: String!
+  isAnonymous: Boolean!
+  likeCount: Int!
+  createdAt: DateTime
+  createdBy: String
+  modifiedAt: DateTime
+  modifiedBy: String
+}
+
+type BambooComment {
+  id: ID!
+  comment: String!
+  bamboo: Bamboo!
+  createdAt: DateTime
+  createdBy: String
+  modifiedAt: DateTime
+  modifiedBy: String
+}
+
+type PageInfo {
+  totalPages: Int!
+  totalElements: Int!
+  currentPage: Int!
+  size: Int!
+  hasNext: Boolean!
+  hasPrevious: Boolean!
+}
+
+type CommunityConnection {
+  communities: [Community!]!
+  pageInfo: PageInfo!
+}
+
 input SignUpRequest {
   department: String!
-  enteredYear: String!
+  enteredYear: Date!
   name: String!
 }
+
+input CommunityRequest {
+  title: String!
+  content: String!
+  type: CommunityType!
+}
+
+type Query {
+  findAllByTab(tab: CommunityType!, page: Int = 1, size: Int = 10): CommunityConnection!
+}
+
+type Mutation {
+  signUp(signUpRequest: SignUpRequest!): String!
+  saveCommunity(communityRequest: CommunityRequest!): Boolean!
+}
+
+mutation SignUp($signUpRequest: SignUpRequest!) {
+  signUp(signUpRequest: $signUpRequest)
+} 

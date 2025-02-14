@@ -6,11 +6,21 @@ interface Post {
     category: string;
 }
 
+export type BoardType = 'FREE' | 'DEPARTMENT' | 'STUDENT';
+
 interface PostStore {
-    post: Post;
-    setPost: (post: Partial<Post>) => void;
-    resetPost: () => void;
+    post: {
+        title: string;
+        content: string;
+        boardType: BoardType;
+    };
+    tags: string[];
+    tagInput: string;
+    setPost: (post: Partial<PostStore['post']>) => void;
+    setTags: (tags: string[]) => void;
+    setTagInput: (input: string) => void;
     submitPost: () => Promise<boolean>;
+    resetPost: () => void;
 }
 
 const initialPost = {
@@ -20,25 +30,58 @@ const initialPost = {
 };
 
 export const usePostStore = create<PostStore>((set, get) => ({
-    post: initialPost,
+    post: {
+        title: '',
+        content: '',
+        boardType: 'FREE',
+    },
+    tags: [],
+    tagInput: '',
     setPost: (newPost) => set((state) => ({
         post: { ...state.post, ...newPost }
     })),
-    resetPost: () => set({ post: initialPost }),
+    setTags: (newTags) => set({ tags: newTags }),
+    setTagInput: (input) => set({ tagInput: input }),
+    resetPost: () => set({
+        post: { title: '', content: '', boardType: 'FREE' },
+        tags: [],
+        tagInput: ''
+    }),
     submitPost: async () => {
         try {
-            const response = await fetch('/api/posts', {
+            const { post, tags } = get();
+            const response = await fetch('http://localhost:8081/graphql', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(get().post)
+                body: JSON.stringify({
+                    query: `
+                        mutation CreatePost($input: CreatePostInput!) {
+                            createPost(input: $input) {
+                                id
+                                title
+                                content
+                                boardType
+                                tags
+                            }
+                        }
+                    `,
+                    variables: {
+                        input: {
+                            title: post.title,
+                            content: post.content,
+                            boardType: post.boardType,
+                            tags: tags
+                        }
+                    }
+                })
             });
-            
-            if (!response.ok) throw new Error('게시글 작성 실패');
-            return true;
+
+            const data = await response.json();
+            return !data.errors;
         } catch (error) {
-            console.error('게시글 작성 중 오류:', error);
+            console.error('게시글 작성 실패:', error);
             return false;
         }
     }

@@ -18,8 +18,8 @@ function StudentForm() {
     const [signUp, { loading, error }] = useSignUpMutation({
         onCompleted: (data) => {
             console.log('SignUp successful:', data.signUp);
-            if (data.signUp?.username) {
-                localStorage.setItem('userName', data.signUp.username);
+            if (data.signUp) {
+                localStorage.setItem('userName', data.signUp);
                 alert('회원가입이 완료되었습니다.');
                 router.push('/');
             }
@@ -52,7 +52,7 @@ function StudentForm() {
             });
 
             if (result.data?.signUp) {
-                localStorage.setItem('userName', result.data.signUp.username);
+                localStorage.setItem('userName', result.data.signUp);
             }
 
         } catch (err) {

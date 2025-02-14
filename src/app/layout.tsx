@@ -1,18 +1,21 @@
-import type { Metadata } from 'next'
+'use client';
+
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Providers from '@/providers/providers'
 import Header from '@/components/header'
+import { ApolloProvider, ApolloClient, InMemoryCache } from '@apollo/client'
 
 const inter = Inter({ 
   subsets: ['latin'],
   display: 'swap'  // 폰트 로딩 최적화
 })
 
-export const metadata: Metadata = {
-  title: '가천 유니버스',
-  description: '가천대학교 커뮤니티',
-}
+const client = new ApolloClient({
+  uri: 'http://localhost:8081/graphql',
+  cache: new InMemoryCache(),
+  credentials: 'include'
+})
 
 export default function RootLayout({
   children,
@@ -22,10 +25,12 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={inter.className}>
-        <Providers>
-          <Header />
-          {children}
-        </Providers>
+        <ApolloProvider client={client}>
+          <Providers>
+            <Header />
+            {children}
+          </Providers>
+        </ApolloProvider>
       </body>
     </html>
   )

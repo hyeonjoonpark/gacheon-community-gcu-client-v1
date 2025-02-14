@@ -4,24 +4,42 @@ import React, { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCommunityStore } from '@/store/communityStore';
 import { useThemeStore } from '@/store/themeStore';
-import { useQuery } from '@tanstack/react-query';
+import { useFindAllByTabQuery, CommunityType, Community } from '@/generated/graphql';
 
 const CommunityPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  const { currentTab, currentPage, searchQuery, setCurrentTab, setCurrentPage, setSearchQuery } = useCommunityStore();
-  const { theme } = useThemeStore();
+  // URL의 tab 파라미터 가져오기 (대문자로 변환)
+  const tabParam = (searchParams.get('tab')?.toUpperCase() || 'FREE') as CommunityType;
+  
+  const { currentTab, setCurrentTab, currentPage, searchQuery, setCurrentPage, setSearchQuery } = useCommunityStore();
+
+  // URL 파라미터가 변경될 때마다 currentTab 업데이트
+  React.useEffect(() => {
+    setCurrentTab(tabParam);
+  }, [tabParam, setCurrentTab]);
+
+  const { data, loading, error } = useFindAllByTabQuery({
+    variables: {
+      tab: tabParam,
+      page: currentPage,
+      size: 10
+    }
+  });
+
+  console.log('Query variables:', {
+    tab: tabParam
+  }); // 디버깅용
 
   const tabs = [
-    { id: 'free', name: '자유게시판' },
-    { id: 'department', name: '학과게시판' },
-    { id: 'student', name: '학생게시판' },
+    { id: 'FREE', name: '자유게시판' },
+    { id: 'DEPARTMENT', name: '학과게시판' },
+    { id: 'STUDENT', name: '학생게시판' },
   ];
 
   const handleTabChange = (tabId: string) => {
-    setCurrentTab(tabId);
-    setCurrentPage(1); // 탭 변경시 1페이지로 초기화
+    // URL 파라미터도 대문자로 유지
     router.push(`/community?tab=${tabId}`, { scroll: false });
   };
 
@@ -34,23 +52,10 @@ const CommunityPage = () => {
     setSearchQuery(e.target.value);
   };
 
-  // 게시글 데이터 fetch 함수
-  const { data, isLoading } = useQuery({
-    queryKey: ['posts', currentTab, currentPage, searchQuery],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/posts?page=${currentPage}&tab=${currentTab}&search=${searchQuery}`
-      );
-      if (!response.ok) throw new Error('Failed to fetch posts');
-      return response.json();
-    },
-    staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
-    placeholderData: (previousData) => previousData  // keepPreviousData 대신 사용
-  });
-
   // 페이지 변경 핸들러
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
+    router.push(`/community?tab=${currentTab}&page=${newPage}`, { scroll: false });
     window.scrollTo(0, 0);
   };
 
@@ -83,7 +88,7 @@ const CommunityPage = () => {
           </nav>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-8 pt-10">
           <div className="relative">
             <input
               type="text"
@@ -112,15 +117,31 @@ const CommunityPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {data?.posts.map((post: any) => (
-                <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="py-4 text-gray-900 dark:text-gray-100">{post.id}</td>
-                  <td className="py-4 text-gray-900 dark:text-gray-100">{post.title}</td>
-                  <td className="py-4 text-gray-900 dark:text-gray-100">{post.author}</td>
-                  <td className="py-4 text-gray-500 dark:text-gray-400">{new Date(post.createdAt).toLocaleDateString()}</td>
-                  <td className="py-4 text-gray-500 dark:text-gray-400">{post.views}</td>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-4">로딩 중...</td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-4 text-red-500">에러 발생: {error.message}</td>
+                </tr>
+              ) : data?.findAllByTab?.communities?.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-4">게시글이 없습니다.</td>
+                </tr>
+              ) : (
+                data?.findAllByTab?.communities?.map((post: Community, index) => (
+                  <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="py-4 text-gray-900 dark:text-gray-100">{index + 1}</td>
+                    <td className="py-4 text-gray-900 dark:text-gray-100">{post.title}</td>
+                    <td className="py-4 text-gray-900 dark:text-gray-100">{post.createdBy}</td>
+                    <td className="py-4 text-gray-500 dark:text-gray-400">
+                      {new Date(post.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-4 text-gray-500 dark:text-gray-400">{post.likeCount}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -128,29 +149,31 @@ const CommunityPage = () => {
         <div className="mt-6 flex justify-center gap-2">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+            disabled={!data?.findAllByTab?.pageInfo.hasPrevious}
+            className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
           >
             이전
           </button>
           
-          {Array.from({ length: data?.totalPages || 1 }, (_, i) => i + 1).map((page) => (
+          {/* 페이지 번호 */}
+          {Array.from({length: data?.findAllByTab?.pageInfo.totalPages || 0}, (_, i) => i + 1).map((pageNum) => (
             <button
-              key={page}
-              onClick={() => handlePageChange(page)}
-              className={`px-3 py-1 rounded-md transition-colors
-                ${currentPage === page
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+              key={pageNum}
+              onClick={() => handlePageChange(pageNum)}
+              className={`px-3 py-1 rounded ${
+                pageNum === data?.findAllByTab?.pageInfo.currentPage
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
             >
-              {page}
+              {pageNum}
             </button>
           ))}
           
           <button
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === (data?.totalPages || 1)}
-            className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+            disabled={!data?.findAllByTab?.pageInfo.hasNext}
+            className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
           >
             다음
           </button>

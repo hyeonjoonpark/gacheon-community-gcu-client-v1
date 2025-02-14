@@ -1,0 +1,3 @@
+mutation SaveCommunity($communityRequest: CommunityRequest!) {
+  saveCommunity(communityRequest: $communityRequest)
+} 
