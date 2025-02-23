@@ -5,26 +5,46 @@ import Link from 'next/link'
 import ThemeToggle from './theme-toggle'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import LoginPopup from './login-popup'
+
+type SubMenuItem = {
+  href: string
+  label: string
+  loginRequired?: string
+}
+
+type MenuItem = {
+  href: string
+  label: string
+  subMenu?: SubMenuItem[]
+  loginRequired?: string
+}
 
 export default function Header() {
   const pathname = usePathname()
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
- 
-  const menuItems = [
-    { href: '/notice', label: '가천뉴스' },
+  const [showLoginPopup, setShowLoginPopup] = useState(false)
+  const [loginRequiredService, setLoginRequiredService] = useState<string | null>(null)
+  
+  // 로그인 상태 체크 (임시로 false로 설정)
+  const isLoggedIn = false
+
+  const menuItems: MenuItem[] = [
+    { href: '/notice', label: '가천뉴스', loginRequired: '가천뉴스' },
     { 
       href: '/community', 
       label: '게시판',
+      loginRequired: '게시판',
       subMenu: [
-        { href: '/community?tab=free', label: '자유게시판' },
-        { href: '/community?tab=department', label: '학과게시판' },
-        { href: '/community?tab=student', label: '학생게시판' },
+        { href: '/community?tab=free', label: '자유게시판', loginRequired: '게시판' },
+        { href: '/community?tab=department', label: '학과게시판', loginRequired: '게시판' },
+        { href: '/community?tab=student', label: '학생게시판', loginRequired: '게시판' },
       ],
     },
-    { href: '/club', label: '동아리' },
-    { href: '/forest', label: '대나무숲' },
-    { href: '/cc', label: '가천cc' },
+    { href: '/club', label: '동아리', loginRequired: '동아리' },
+    { href: '/forest', label: '대나무숲', loginRequired: '대나무숲' },
+    { href: '/cc', label: '가천cc', loginRequired: '가천cc' },
     {
       href: '/wiki',
       label: 'wiki',
@@ -33,7 +53,31 @@ export default function Header() {
         { href: '/wiki/case', label: '사건사고' },
       ],
     },
+    { 
+      href: '/coding-test', 
+      label: '코딩테스트', 
+      subMenu: [
+        { href: '/coding-test/competition', label: '대회', loginRequired: '코딩테스트' },
+        { href: '/coding-test/item', label: '아이템전', loginRequired: '코딩테스트' },
+      ],
+    }
   ]
+
+  const handleSubMenuClick = (e: React.MouseEvent, href: string, loginRequiredLabel?: string) => {
+    if (!isLoggedIn && loginRequiredLabel) {
+      e.preventDefault()
+      setLoginRequiredService(loginRequiredLabel)
+      setShowLoginPopup(true)
+    }
+  }
+
+  const handleMenuClick = (e: React.MouseEvent, item: MenuItem) => {
+    if (!isLoggedIn && item.loginRequired) {
+      e.preventDefault()
+      setLoginRequiredService(item.loginRequired)
+      setShowLoginPopup(true)
+    }
+  }
 
   return (
     <>
@@ -64,6 +108,7 @@ export default function Header() {
                     >
                       <Link 
                         href={item.href} 
+                        onClick={(e) => handleMenuClick(e, item)}
                         className={`block py-2 ${
                           pathname === item.href ? 'text-blue-600 dark:text-blue-400' : ''
                         }`}
@@ -79,6 +124,7 @@ export default function Header() {
                             <Link
                               key={subItem.href}
                               href={subItem.href}
+                              onClick={(e) => handleSubMenuClick(e, subItem.href, subItem.loginRequired)}
                               className={`block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${
                                 pathname === subItem.href ? 'text-blue-600 dark:text-blue-400' : ''
                               }`}
@@ -132,6 +178,7 @@ export default function Header() {
                   <div key={item.href}>
                     <Link
                       href={item.href}
+                      onClick={(e) => handleMenuClick(e, item)}
                       className={`block px-3 py-2 rounded-md text-base font-medium ${
                         pathname === item.href
                           ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
@@ -170,6 +217,12 @@ export default function Header() {
           )}
         </div>
       </header>
+
+      <LoginPopup 
+        isOpen={showLoginPopup} 
+        onClose={() => setShowLoginPopup(false)}
+        service={loginRequiredService}
+      />
     </>
   )
 } 

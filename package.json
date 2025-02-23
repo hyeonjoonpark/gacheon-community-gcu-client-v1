@@ -38,6 +38,7 @@
     "@graphql-codegen/typescript": "4.0.6",
     "@graphql-codegen/typescript-operations": "4.2.0",
     "@graphql-codegen/typescript-react-apollo": "4.3.0",
+    "@shadcn/ui": "^0.0.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
