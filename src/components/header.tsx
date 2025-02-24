@@ -28,23 +28,22 @@ export default function Header() {
   const [loginRequiredService, setLoginRequiredService] = useState<string | null>(null)
   
   // 로그인 상태 체크 (임시로 false로 설정)
-  const isLoggedIn = false
+  const isLoggedIn = true;
 
   const menuItems: MenuItem[] = [
-    { href: '/notice', label: '가천뉴스', loginRequired: '가천뉴스' },
+    { href: '/notice', label: '가천뉴스' },
     { 
       href: '/community', 
       label: '게시판',
-      loginRequired: '게시판',
       subMenu: [
-        { href: '/community?tab=free', label: '자유게시판', loginRequired: '게시판' },
-        { href: '/community?tab=department', label: '학과게시판', loginRequired: '게시판' },
-        { href: '/community?tab=student', label: '학생게시판', loginRequired: '게시판' },
+        { href: '/community?tab=free', label: '자유게시판' },
+        { href: '/community?tab=department', label: '학과게시판', loginRequired: '학과게시판' },
+        { href: '/community?tab=student', label: '학생게시판', loginRequired: '학생게시판' },
       ],
     },
-    { href: '/club', label: '동아리', loginRequired: '동아리' },
-    { href: '/forest', label: '대나무숲', loginRequired: '대나무숲' },
-    { href: '/cc', label: '가천cc', loginRequired: '가천cc' },
+    { href: '/club', label: '동아리' },
+    { href: '/forest', label: '대나무숲' },
+    { href: '/cc', label: '가천cc' },
     {
       href: '/wiki',
       label: 'wiki',
@@ -57,8 +56,8 @@ export default function Header() {
       href: '/coding-test', 
       label: '코딩테스트', 
       subMenu: [
-        { href: '/coding-test/competition', label: '대회', loginRequired: '코딩테스트' },
-        { href: '/coding-test/item', label: '아이템전', loginRequired: '코딩테스트' },
+        { href: '/coding-test/competition', label: '대회', loginRequired: '코딩테스트 대회' },
+        { href: '/coding-test/item', label: '아이템전', loginRequired: '코딩테스트 아이템전' },
       ],
     }
   ]
@@ -144,9 +143,17 @@ export default function Header() {
                 <ThemeToggle />
               </div>
               
-              <Link href="/login" className="hidden md:block px-4 py-2 text-gray-800 dark:text-gray-100">
-                로그인
-              </Link>
+              <div className="hidden md:flex space-x-4">
+                <Link href="/login" className="px-4 py-2 text-gray-800 dark:text-gray-100">
+                  로그인
+                </Link>
+                <Link 
+                  href="/admin/login" 
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+                >
+                  ADMIN
+                </Link>
+              </div>
               
               <button
                 className="md:hidden p-2"
@@ -212,6 +219,12 @@ export default function Header() {
                 >
                   로그인
                 </Link>
+                <Link
+                  href="/admin/login"
+                  className="block px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors mt-2"
+                >
+                  ADMIN
+                </Link>  
               </div>
             </div>
           )}
