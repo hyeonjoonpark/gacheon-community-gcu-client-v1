@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/button'
 import Link from 'next/link'
 
 export default function CodingTestPage() {
@@ -48,7 +48,7 @@ export default function CodingTestPage() {
       <div className="relative z-10 container mx-auto px-4 py-20">
         <div className="text-center mb-12">
           <h2 className="text-2xl text-gray-900 dark:text-white mb-4">
-            인서트 온라인 저지에서 온라인으로 상대방과 코딩 경쟁을 할 수 있습니다
+            가천대학교 코딩경쟁 플랫폼에서 온라인으로 상대방과 코딩 경쟁을 할 수 있습니다
           </h2>
         </div>
         

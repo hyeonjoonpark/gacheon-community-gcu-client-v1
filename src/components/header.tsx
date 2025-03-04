@@ -56,10 +56,15 @@ export default function Header() {
       href: '/coding-test', 
       label: '코딩테스트', 
       subMenu: [
+        { href: '/coding-test/my-record', label: '나의 기록' },
         { href: '/coding-test/competition', label: '대회', loginRequired: '코딩테스트 대회' },
         { href: '/coding-test/item', label: '아이템전', loginRequired: '코딩테스트 아이템전' },
       ],
-    }
+    },
+    {
+      href: '/washing-machine',
+      label: '세탁기'
+    },
   ]
 
   const handleSubMenuClick = (e: React.MouseEvent, href: string, loginRequiredLabel?: string) => {
